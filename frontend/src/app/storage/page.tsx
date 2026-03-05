@@ -1,35 +1,37 @@
 'use client';
 import { useState } from 'react';
 import { useToast } from '@/context/ToastContext';
+import { useTranslation } from '@/context/LanguageContext';
 import TopBar from '@/components/layout/TopBar';
 import BottomNav from '@/components/layout/BottomNav';
 
 export default function StoragePage() {
     const [activeTab, setActiveTab] = useState('tips');
     const { showToast } = useToast();
+    const t = useTranslation();
 
     return (
         <div className="app">
-            <TopBar title="Storage & Recycling" subtitle="Post-harvest management" backHref="/dashboard" icon="🏪" />
+            <TopBar title={t('storage.title')} subtitle={t('storage.subtitle')} backHref="/dashboard" icon="🏪" />
             <div className="scroll">
                 <div className="segs">
-                    <button className={`seg ${activeTab === 'tips' ? 'active' : ''}`} onClick={() => setActiveTab('tips')}>Storage Tips</button>
-                    <button className={`seg ${activeTab === 'book' ? 'active' : ''}`} onClick={() => setActiveTab('book')}>Book Storage</button>
-                    <button className={`seg ${activeTab === 'recycle' ? 'active' : ''}`} onClick={() => setActiveTab('recycle')}>Agri Waste</button>
+                    <button className={`seg ${activeTab === 'tips' ? 'active' : ''}`} onClick={() => setActiveTab('tips')}>{t('storage.tips')}</button>
+                    <button className={`seg ${activeTab === 'book' ? 'active' : ''}`} onClick={() => setActiveTab('book')}>{t('storage.book')}</button>
+                    <button className={`seg ${activeTab === 'recycle' ? 'active' : ''}`} onClick={() => setActiveTab('recycle')}>{t('storage.agriWaste')}</button>
                 </div>
 
                 {activeTab === 'tips' && (
                     <>
-                        <div className="alert alert-w"><span className="alert-ico">🌡️</span><div className="alert-txt"><strong>Alert:</strong> Current humidity 68% — above safe range. Ensure ventilation.</div></div>
+                        <div className="alert alert-w"><span className="alert-ico">🌡️</span><div className="alert-txt"><strong>{t('storage.alert')}</strong> {t('storage.alertMsg')}</div></div>
                         <div className="card" style={{ padding: 0 }}>
                             {[
                                 { icon: '🌡️', title: 'Temperature & Humidity', sub: '25–30°C, 65–70% humidity. Wire mesh for airflow.' },
                                 { icon: '🏗️', title: 'Structure Type', sub: 'Elevated bamboo platforms with thatched roof.' },
                                 { icon: '🔍', title: 'Regular Inspection', sub: 'Check weekly. Remove rotting bulbs. Expected loss: 8–12%.' },
                                 { icon: '❄️', title: 'Cold Storage', sub: 'Extends shelf life to 6 months. ₹2.50–4/kg/month.' }
-                            ].map((t, i, arr) => (
-                                <div key={t.title} className="ri" style={{ cursor: 'default', gap: 14, ...(i === arr.length - 1 ? { borderBottom: 'none' } : {}) }}>
-                                    <span style={{ fontSize: 24 }}>{t.icon}</span><div><div className="rtit">{t.title}</div><div className="rsub">{t.sub}</div></div>
+                            ].map((tip, i, arr) => (
+                                <div key={tip.title} className="ri" style={{ cursor: 'default', gap: 14, ...(i === arr.length - 1 ? { borderBottom: 'none' } : {}) }}>
+                                    <span style={{ fontSize: 24 }}>{tip.icon}</span><div><div className="rtit">{tip.title}</div><div className="rsub">{tip.sub}</div></div>
                                 </div>
                             ))}
                         </div>
@@ -40,13 +42,13 @@ export default function StoragePage() {
                     <>
                         <div className="storage-facility">
                             <div className="sf-header"><div><div className="sf-name">Nashik Cold Chain Pvt. Ltd.</div><div className="sf-sub">📍 Lasalgaon · 12 km</div></div><span className="badge bg">Open</span></div>
-                            <div className="sf-grid"><div className="sf-stat"><div className="sf-stat-lbl">Rate</div><div className="sf-stat-val">₹3/kg/mo</div></div><div className="sf-stat"><div className="sf-stat-lbl">Available</div><div className="sf-stat-val">120 MT</div></div></div>
-                            <button className="btn btn-g btn-sm btn-full" onClick={() => showToast('Booking request sent!')}>Book Now</button>
+                            <div className="sf-grid"><div className="sf-stat"><div className="sf-stat-lbl">{t('storage.rate')}</div><div className="sf-stat-val">₹3/kg/mo</div></div><div className="sf-stat"><div className="sf-stat-lbl">{t('storage.available')}</div><div className="sf-stat-val">120 MT</div></div></div>
+                            <button className="btn btn-g btn-sm btn-full" onClick={() => showToast(t('storage.bookingConfirm'))}>{t('storage.bookNow')}</button>
                         </div>
                         <div className="storage-facility">
                             <div className="sf-header"><div><div className="sf-name">NAFED Warehouse, Niphad</div><div className="sf-sub">📍 Niphad · 8 km · Govt.</div></div><span className="badge ba">Low Space</span></div>
-                            <div className="sf-grid"><div className="sf-stat"><div className="sf-stat-lbl">Rate</div><div className="sf-stat-val">₹2.50/kg/mo</div></div><div className="sf-stat" style={{ background: '#FEF3C7' }}><div className="sf-stat-lbl">Available</div><div className="sf-stat-val" style={{ color: '#92400E' }}>42 MT only</div></div></div>
-                            <button className="btn btn-g btn-sm btn-full" onClick={() => showToast('Booking request sent!')}>Book Quickly ⚡</button>
+                            <div className="sf-grid"><div className="sf-stat"><div className="sf-stat-lbl">{t('storage.rate')}</div><div className="sf-stat-val">₹2.50/kg/mo</div></div><div className="sf-stat" style={{ background: '#FEF3C7' }}><div className="sf-stat-lbl">{t('storage.available')}</div><div className="sf-stat-val" style={{ color: '#92400E' }}>42 MT only</div></div></div>
+                            <button className="btn btn-g btn-sm btn-full" onClick={() => showToast(t('storage.bookingConfirm'))}>{t('storage.bookQuickly')}</button>
                         </div>
                     </>
                 )}

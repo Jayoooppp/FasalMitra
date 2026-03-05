@@ -41,9 +41,6 @@ export const api = {
     // Labor
     getLaborers: (skill?: string) => request(`/labor${skill ? `?skill=${skill}` : ''}`),
 
-    // Soil
-    getSoilData: () => request('/soil'),
-
     // News
     getNews: (category?: string) => request(`/news${category ? `?category=${category}` : ''}`),
 

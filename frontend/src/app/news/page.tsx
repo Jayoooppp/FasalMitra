@@ -1,32 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
+import { useTranslation } from '@/context/LanguageContext';
 import TopBar from '@/components/layout/TopBar';
 import BottomNav from '@/components/layout/BottomNav';
 
 export default function NewsPage() {
+    const t = useTranslation();
     const [news, setNews] = useState<any[]>([]);
     const [weather, setWeather] = useState<any[]>([]);
-    const [activeFilter, setActiveFilter] = useState('All');
-    const filters = ['All', 'Weather', 'Policy', 'Market', 'Technology', 'Alerts'];
+    const filterKeys = ['news.all', 'news.weather', 'news.policy', 'news.market', 'news.technology', 'news.alerts'];
+    const filterValues = ['All', 'Weather', 'Policy', 'Market', 'Technology', 'Alerts'];
+    const [activeIdx, setActiveIdx] = useState(0);
 
     useEffect(() => {
-        api.getNews(activeFilter !== 'All' ? activeFilter : undefined)
+        const val = filterValues[activeIdx];
+        api.getNews(val !== 'All' ? val : undefined)
             .then(data => { setNews(data.news); if (data.weather) setWeather(data.weather); })
             .catch(() => { });
-    }, [activeFilter]);
+    }, [activeIdx]);
 
     return (
         <div className="app">
-            <TopBar title="Agri News & Updates" subtitle="Stay informed about farming" backHref="/dashboard" icon="🔔" />
+            <TopBar title={t('news.title')} subtitle={t('news.subtitle')} backHref="/dashboard" icon="🔔" />
             <div className="scroll">
                 <div className="chips">
-                    {filters.map(f => <button key={f} className={`chip ${activeFilter === f ? 'active' : ''}`} onClick={() => setActiveFilter(f)}>{f}</button>)}
+                    {filterKeys.map((k, i) => (
+                        <button key={k} className={`chip ${activeIdx === i ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>{t(k)}</button>
+                    ))}
                 </div>
 
                 {weather.length > 0 && (
                     <div className="wx">
-                        <div className="wx-title">☁️ 5-Day Weather Forecast</div>
+                        <div className="wx-title">{t('news.forecast')}</div>
                         <div className="wx-days">
                             {weather.map(w => (
                                 <div key={w.day}><div className="wx-dl">{w.day}</div><div className="wx-em">{w.emoji}</div><div className="wx-tmp">{w.temp}</div></div>
@@ -42,7 +48,7 @@ export default function NewsPage() {
                             <span className="ntag" style={{ background: n.categoryColor }}>{n.category}</span>
                             <div className="ntitle">{n.title}</div>
                             <div className="ndesc">{n.description}</div>
-                            <div className="nfoot"><span className="ntime">🕐 {n.time}</span><span className="nread">Read More ›</span></div>
+                            <div className="nfoot"><span className="ntime">🕐 {n.time}</span><span className="nread">{t('news.readMore')}</span></div>
                         </div>
                     </div>
                 ) : (

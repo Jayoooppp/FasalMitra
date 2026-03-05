@@ -1,34 +1,38 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
+import { useTranslation } from '@/context/LanguageContext';
 import TopBar from '@/components/layout/TopBar';
 import BottomNav from '@/components/layout/BottomNav';
 
 export default function LaborPage() {
+    const t = useTranslation();
     const [laborers, setLaborers] = useState<any[]>([]);
-    const [activeFilter, setActiveFilter] = useState('All');
+    const filterKeys = ['labor.all', 'labor.harvesting', 'labor.sowing', 'labor.irrigation', 'labor.pestControl', 'labor.general'];
+    const filterValues = ['All', 'Harvesting', 'Sowing', 'Irrigation', 'Pest Control', 'General'];
+    const [activeIdx, setActiveIdx] = useState(0);
     const [activeTab, setActiveTab] = useState('find');
-    const filters = ['All', 'Harvesting', 'Sowing', 'Irrigation', 'Pest Control', 'General'];
 
     useEffect(() => {
-        api.getLaborers(activeFilter !== 'All' ? activeFilter : undefined)
+        const val = filterValues[activeIdx];
+        api.getLaborers(val !== 'All' ? val : undefined)
             .then(data => setLaborers(data.laborers))
             .catch(() => { });
-    }, [activeFilter]);
+    }, [activeIdx]);
 
     return (
         <div className="app">
-            <TopBar title="Labor Finder" subtitle="Find & hire farm workers" backHref="/dashboard" icon="👥" />
+            <TopBar title={t('labor.title')} subtitle={t('labor.subtitle')} backHref="/dashboard" icon="👥" />
             <div className="scroll">
                 <div className="segs">
-                    <button className={`seg ${activeTab === 'find' ? 'active' : ''}`} onClick={() => setActiveTab('find')}>Find Workers</button>
-                    <button className={`seg ${activeTab === 'post' ? 'active' : ''}`} onClick={() => setActiveTab('post')}>Post Job</button>
+                    <button className={`seg ${activeTab === 'find' ? 'active' : ''}`} onClick={() => setActiveTab('find')}>{t('labor.findWorkers')}</button>
+                    <button className={`seg ${activeTab === 'post' ? 'active' : ''}`} onClick={() => setActiveTab('post')}>{t('labor.postJob')}</button>
                 </div>
 
                 {activeTab === 'find' && (
                     <>
                         <div className="chips">
-                            {filters.map(f => <button key={f} className={`chip ${activeFilter === f ? 'active' : ''}`} onClick={() => setActiveFilter(f)}>{f}</button>)}
+                            {filterKeys.map((k, i) => <button key={k} className={`chip ${activeIdx === i ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>{t(k)}</button>)}
                         </div>
                         {laborers.map(l => (
                             <div key={l.id} className="wcard">
@@ -45,8 +49,8 @@ export default function LaborPage() {
                                     {l.skills.map((s: string) => <span key={s} className="tag">{s}</span>)}
                                 </div>
                                 <div className="row">
-                                    <button className="btn btn-out btn-sm col">📞 Call</button>
-                                    <button className="btn btn-g btn-sm col">💬 Message</button>
+                                    <button className="btn btn-out btn-sm col">{t('labor.call')}</button>
+                                    <button className="btn btn-g btn-sm col">{t('labor.message')}</button>
                                 </div>
                             </div>
                         ))}
@@ -55,13 +59,13 @@ export default function LaborPage() {
 
                 {activeTab === 'post' && (
                     <div className="card p-16 mb-12">
-                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Post a Job</div>
-                        <div className="ig"><label>Job Title</label><input placeholder="e.g., Onion Harvesting" /></div>
-                        <div className="ig"><label>Workers Needed</label><input type="number" placeholder="5" /></div>
-                        <div className="ig"><label>Start Date</label><input type="date" /></div>
-                        <div className="ig"><label>Daily Wage (₹/day)</label><input type="number" placeholder="400" /></div>
-                        <div className="ig mb-0"><label>Description</label><input placeholder="Describe the work…" /></div>
-                        <button className="btn btn-g btn-full mt-16">Post Job</button>
+                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>{t('labor.postAJob')}</div>
+                        <div className="ig"><label>{t('labor.jobTitle')}</label><input placeholder="e.g., Onion Harvesting" /></div>
+                        <div className="ig"><label>{t('labor.workersNeeded')}</label><input type="number" placeholder="5" /></div>
+                        <div className="ig"><label>{t('labor.startDate')}</label><input type="date" /></div>
+                        <div className="ig"><label>{t('labor.dailyWage')}</label><input type="number" placeholder="400" /></div>
+                        <div className="ig mb-0"><label>{t('labor.description')}</label><input placeholder="Describe the work…" /></div>
+                        <button className="btn btn-g btn-full mt-16">{t('labor.postButton')}</button>
                     </div>
                 )}
             </div>

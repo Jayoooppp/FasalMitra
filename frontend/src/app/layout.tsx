@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
     title: "FasalMitra – AI Farmer Ecosystem",
@@ -13,9 +14,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="en">
             <body>
                 <AuthProvider>
-                    <ToastProvider>
-                        {children}
-                    </ToastProvider>
+                    <LanguageProvider>
+                        <ToastProvider>
+                            {children}
+                        </ToastProvider>
+                    </LanguageProvider>
                 </AuthProvider>
             </body>
         </html>
