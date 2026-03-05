@@ -30,16 +30,16 @@ const userSchema = new mongoose.Schema({
     },
     location: {
         type: String,
-        trim: true,
-        default: 'Nashik, Maharashtra'
+        required: [true, 'Location is required'],
+        trim: true
     },
     farmSize: {
         type: Number,
-        default: 0
+        required: [true, 'Farm size is required']
     },
     soilType: {
         type: String,
-        default: 'Black Cotton'
+        required: [true, 'Soil type is required']
     },
     preferredLanguage: {
         type: String,

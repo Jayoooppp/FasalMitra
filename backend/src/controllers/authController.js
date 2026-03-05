@@ -12,6 +12,10 @@ exports.register = async (req, res, next) => {
     try {
         const { name, email, password, phone, location, farmSize, soilType, preferredLanguage } = req.body;
 
+        if (!location || farmSize == null || !soilType) {
+            return res.status(400).json({ error: 'Location, farm size and soil type are required' });
+        }
+
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: 'Email already registered' });
@@ -22,9 +26,9 @@ exports.register = async (req, res, next) => {
             email,
             password,
             phone: phone || '',
-            location: location || 'Nashik, Maharashtra',
-            farmSize: farmSize || 0,
-            soilType: soilType || 'Black Cotton',
+            location,
+            farmSize,
+            soilType,
             preferredLanguage: preferredLanguage || 'English'
         });
 
