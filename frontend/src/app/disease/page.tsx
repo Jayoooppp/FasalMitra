@@ -1,15 +1,25 @@
 'use client';
 import { useState, useRef } from 'react';
 import { useTranslation } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 import TopBar from '@/components/layout/TopBar';
 import BottomNav from '@/components/layout/BottomNav';
+
+const ALL_CROPS = ['Onion', 'Tomato', 'Rice (Paddy)', 'Wheat', 'Cotton', 'Soybean', 'Potato', 'Chickpea', 'Maize', 'Sugarcane'];
 
 export default function DiseasePage() {
     const [activeTab, setActiveTab] = useState('scan');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [cropType, setCropType] = useState('Onion');
+    const { user } = useAuth();
+
+    // Merge active crops with full list for dropdown (user crops first)
+    const activeCropNames = (user?.activeCrops || []).map(c => c.name);
+    const otherCrops = ALL_CROPS.filter(c => !activeCropNames.includes(c));
+    const cropOptions = [...activeCropNames, ...otherCrops];
+
+    const [cropType, setCropType] = useState(activeCropNames[0] || 'Onion');
     const [symptoms, setSymptoms] = useState('');
     const [diagnosing, setDiagnosing] = useState(false);
     const [diagResult, setDiagResult] = useState<string | null>(null);
@@ -154,7 +164,14 @@ Keep responses practical with specific product names and dosages used in India. 
                             <div className="ig">
                                 <label>{t('disease.cropType')}</label>
                                 <select value={cropType} onChange={e => setCropType(e.target.value)}>
-                                    <option>Onion</option><option>Tomato</option><option>Rice (Paddy)</option><option>Wheat</option><option>Cotton</option>
+                                    {activeCropNames.length > 0 && (
+                                        <optgroup label="My Active Crops">
+                                            {activeCropNames.map(n => <option key={n}>{n}</option>)}
+                                        </optgroup>
+                                    )}
+                                    <optgroup label="Other Crops">
+                                        {otherCrops.map(n => <option key={n}>{n}</option>)}
+                                    </optgroup>
                                 </select>
                             </div>
                             <div className="ig mb-0">

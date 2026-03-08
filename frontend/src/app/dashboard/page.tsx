@@ -27,6 +27,17 @@ function aqiEmoji(aqi: number): string {
     return ['🟢', '🟡', '🟠', '🔴', '🟣'][aqi - 1] || '⚪';
 }
 
+function getDaysSince(startDate: string | Date): number {
+    const start = new Date(startDate);
+    const now = new Date();
+    return Math.max(0, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
+function getProgressPercent(dayCount: number, totalDays: number): number {
+    if (!totalDays) return 0;
+    return Math.min(100, Math.round((dayCount / totalDays) * 100));
+}
+
 interface WeatherData {
     weather: { temp: number; description: string; icon: string; humidity: number };
     airQuality: { aqi: number; label: string; pm25: number };
@@ -38,12 +49,10 @@ export default function Dashboard() {
     const t = useTranslation();
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [weatherLoading, setWeatherLoading] = useState(true);
-    const [tasks, setTasks] = useState([
-        { id: 1, title: 'Irrigate Onion Field (Block A)', due: 'Due today · 2.5 acres', priority: 'amber' as const, done: true },
-        { id: 2, title: 'Apply Potash fertilizer', due: 'Due tomorrow · 60 kg/acre', priority: 'green' as const, done: false },
-        { id: 3, title: 'Check for Purple Blotch disease', due: 'Overdue · Inspect all plants', priority: 'red' as const, done: false },
-        { id: 4, title: 'Update crop log', due: 'This week', priority: 'green' as const, done: false },
-    ]);
+    const [activeCropIndex, setActiveCropIndex] = useState(0);
+
+    const activeCrops = user?.activeCrops || [];
+    const primaryCrop = activeCrops[activeCropIndex] || null;
 
     // Fetch weather on mount
     useEffect(() => {
@@ -57,11 +66,6 @@ export default function Dashboard() {
         }
     }, [user?.location]);
 
-    const toggleTask = (id: number) => {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
-        showToast(t('dash.taskCompleted'));
-    };
-
     // Weather display values
     const weatherIcon = weatherData ? weatherEmoji(weatherData.weather.icon) : '☀️';
     const weatherVal = weatherData
@@ -71,6 +75,9 @@ export default function Dashboard() {
     const aqiVal = weatherData
         ? `${weatherData.airQuality.label} · PM2.5: ${Math.round(weatherData.airQuality.pm25)}`
         : t('dash.airVal');
+
+    const dayCount = primaryCrop ? getDaysSince(primaryCrop.startDate) : 0;
+    const progress = primaryCrop ? getProgressPercent(dayCount, primaryCrop.totalDays || 120) : 0;
 
     return (
         <div className="app">
@@ -124,24 +131,6 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-
-                    {/* Tasks */}
-                    <div className="sec-row"><span className="sec-lbl">{t('dash.todaysTasks')}</span><Link href="/guide" className="sec-lnk">{t('dash.viewAll')}</Link></div>
-                    <div className="card p-16 mb-12">
-                        {tasks.map(tk => (
-                            <div key={tk.id} className="task-item">
-                                <div className={`task-dot ${tk.priority}`} />
-                                <div>
-                                    <div className="task-txt">{tk.title}</div>
-                                    <div className="task-due">{tk.due}</div>
-                                </div>
-                                <div className={`task-check ${tk.done ? 'done' : ''}`} onClick={() => toggleTask(tk.id)}>
-                                    {tk.done ? '✓' : ''}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
                     {/* Instant Actions */}
                     <div className="sec-row"><span className="sec-lbl">{t('dash.instantActions')}</span></div>
                     <div className="card mb-16" style={{ padding: 0 }}>
@@ -161,21 +150,80 @@ export default function Dashboard() {
                         ))}
                     </div>
 
-                    {/* Active Crop */}
-                    <div className="sec-row"><span className="sec-lbl">{t('dash.activeCrop')}</span><Link href="/guide" className="sec-lnk">{t('dash.fullGuide')}</Link></div>
-                    <div className="card p-16 mb-16">
-                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-                            <span style={{ fontSize: 34 }}>🧅</span>
-                            <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 800 }}>Onion – Rabi 2024–25</div><div style={{ fontSize: 12, color: 'var(--sub)' }}>Started Nov 12 · 2.5 acres</div></div>
-                            <span className="badge ba">Day 78</span>
-                        </div>
-                        <div className="prog-bar"><div className="prog-fill" style={{ width: '65%' }} /></div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--sub)', marginTop: 4 }}><span>0 {t('guide.days')}</span><span style={{ color: 'var(--green)', fontWeight: 600 }}>65% {t('guide.complete')}</span><span>120 {t('guide.days')}</span></div>
+                    {/* Active Crops Section */}
+                    <div className="sec-row">
+                        <span className="sec-lbl">{t('dash.activeCrop')}</span>
+                        <Link href="/guide" className="sec-lnk">{t('dash.fullGuide')}</Link>
                     </div>
+
+                    {activeCrops.length === 0 ? (
+                        /* Empty state */
+                        <div className="card p-16 mb-16" style={{ textAlign: 'center', padding: '20px 16px' }}>
+                            <div style={{ fontSize: 36, marginBottom: 8 }}>🌱</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>No Active Crops</div>
+                            <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 14 }}>
+                                Get AI-powered crop recommendations to start your farming journey
+                            </div>
+                            <Link href="/crop" style={{ textDecoration: 'none' }}>
+                                <button className="btn btn-g" style={{ padding: '10px 20px', fontSize: 13 }}>
+                                    🤖 Get Crop Recommendations
+                                </button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Multi-crop switcher */}
+                            {activeCrops.length > 1 && (
+                                <div style={{ overflowX: 'auto', display: 'flex', gap: 8, paddingBottom: 4, marginBottom: 8 }}>
+                                    {activeCrops.map((c, i) => (
+                                        <button
+                                            key={c._id}
+                                            onClick={() => setActiveCropIndex(i)}
+                                            style={{
+                                                flexShrink: 0,
+                                                padding: '5px 12px',
+                                                borderRadius: 20,
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                background: i === activeCropIndex ? 'var(--green)' : 'var(--card)',
+                                                color: i === activeCropIndex ? '#fff' : 'var(--fg)',
+                                                boxShadow: i === activeCropIndex ? '0 2px 8px rgba(76,175,80,0.3)' : 'none',
+                                                transition: 'all 0.2s',
+                                            }}
+                                        >
+                                            {c.emoji} {c.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {primaryCrop && (
+                                <div className="card p-16 mb-16">
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                                        <span style={{ fontSize: 34 }}>{primaryCrop.emoji}</span>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: 15, fontWeight: 800 }}>{primaryCrop.name} – {primaryCrop.season}</div>
+                                            <div style={{ fontSize: 12, color: 'var(--sub)' }}>
+                                                Started {new Date(primaryCrop.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {primaryCrop.acreage} acres
+                                            </div>
+                                        </div>
+                                        <span className="badge ba">Day {dayCount}</span>
+                                    </div>
+                                    <div className="prog-bar"><div className="prog-fill" style={{ width: `${progress}%` }} /></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--sub)', marginTop: 4 }}>
+                                        <span>0 {t('guide.days')}</span>
+                                        <span style={{ color: 'var(--green)', fontWeight: 600 }}>{progress}% {t('guide.complete')}</span>
+                                        <span>{primaryCrop.totalDays || 120} {t('guide.days')}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
             <BottomNav />
         </div>
     );
 }
-

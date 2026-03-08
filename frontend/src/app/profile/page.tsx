@@ -9,7 +9,7 @@ import Link from 'next/link';
 import BottomNav from '@/components/layout/BottomNav';
 
 export default function ProfilePage() {
-    const { user, logout, updateUser } = useAuth();
+    const { user, logout, updateUser, removeCrop } = useAuth();
     const router = useRouter();
     const t = useTranslation();
     const { showToast } = useToast();
@@ -20,6 +20,9 @@ export default function ProfilePage() {
     const [location, setLocation] = useState(user?.location || '');
     const [preferredLanguage, setPreferredLanguage] = useState(user?.preferredLanguage || 'English');
     const [saving, setSaving] = useState(false);
+    const [removingCrop, setRemovingCrop] = useState<string | null>(null);
+
+    const activeCrops = user?.activeCrops || [];
 
     const handleLogout = () => {
         logout();
@@ -37,7 +40,6 @@ export default function ProfilePage() {
                 soilType: user?.soilType,
                 preferredLanguage,
             });
-            // Update local auth state + localStorage
             updateUser(updated);
             showToast(t('profile.saved'));
         } catch (err: unknown) {
@@ -45,6 +47,30 @@ export default function ProfilePage() {
         }
         setSaving(false);
     };
+
+    const handleRemoveCrop = async (cropId: string, cropName: string) => {
+        setRemovingCrop(cropId);
+        try {
+            await removeCrop(cropId);
+            showToast(`${cropName} removed from your farm`);
+        } catch (err: any) {
+            showToast(err.message || 'Failed to remove crop');
+        }
+        setRemovingCrop(null);
+    };
+
+    // Estimate earnings from active crops
+    const estimatedEarnings = activeCrops.reduce((sum, crop) => {
+        const earningsMap: Record<string, number> = {
+            'Onion': 85000, 'Soybean': 55000, 'Wheat': 45000, 'Tomato': 90000,
+            'Rice (Paddy)': 60000, 'Cotton': 75000,
+        };
+        return sum + (earningsMap[crop.name] || 50000);
+    }, 0);
+
+    const displayEarnings = estimatedEarnings >= 100000
+        ? `₹${(estimatedEarnings / 100000).toFixed(1)}L`
+        : `₹${Math.round(estimatedEarnings / 1000)}K`;
 
     return (
         <div className="app">
@@ -55,11 +81,59 @@ export default function ProfilePage() {
                     <div className="profile-detail">📍 {user?.location || '—'}</div>
                     <div className="profile-stats">
                         <div className="ps-item"><div className="ps-val">{user?.farmSize ?? '—'}</div><div className="ps-lbl">{t('profile.acres')}</div></div>
-                        <div className="ps-item"><div className="ps-val">₹85K</div><div className="ps-lbl">{t('profile.estEarnings')}</div></div>
-                        <div className="ps-item"><div className="ps-val">3</div><div className="ps-lbl">{t('profile.activeCrops')}</div></div>
+                        <div className="ps-item"><div className="ps-val">{activeCrops.length > 0 ? displayEarnings : '—'}</div><div className="ps-lbl">{t('profile.estEarnings')}</div></div>
+                        <div className="ps-item"><div className="ps-val">{activeCrops.length}</div><div className="ps-lbl">{t('profile.activeCrops')}</div></div>
                     </div>
                 </div>
                 <div style={{ padding: 16 }}>
+
+                    {/* Active Crops Section */}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--sub)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        My Active Crops ({activeCrops.length})
+                    </div>
+                    {activeCrops.length === 0 ? (
+                        <div className="card p-16 mb-12" style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 28, marginBottom: 6 }}>🌱</div>
+                            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 10 }}>No crops added yet</div>
+                            <Link href="/crop" style={{ textDecoration: 'none' }}>
+                                <button className="btn btn-g" style={{ fontSize: 12, padding: '8px 16px' }}>Get AI Recommendations</button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="card mb-12" style={{ padding: 0 }}>
+                            {activeCrops.map((crop, i) => (
+                                <div key={crop._id} className="ri" style={i === activeCrops.length - 1 ? { borderBottom: 'none' } : {}}>
+                                    <div className="ril">
+                                        <div className="rico" style={{ fontSize: 22 }}>{crop.emoji}</div>
+                                        <div>
+                                            <div className="rtit">{crop.name}</div>
+                                            <div className="rsub">{crop.season} · {crop.acreage} acres · {crop.totalDays || 120}-day crop</div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveCrop(crop._id, crop.name)}
+                                        disabled={removingCrop === crop._id}
+                                        style={{
+                                            background: 'none', border: 'none',
+                                            color: 'var(--red, #ef5350)',
+                                            fontSize: 18, cursor: 'pointer', padding: '4px 6px',
+                                            opacity: removingCrop === crop._id ? 0.4 : 1
+                                        }}
+                                        title="Remove crop"
+                                    >
+                                        🗑
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <Link href="/crop" style={{ textDecoration: 'none' }}>
+                        <button className="btn btn-ghost btn-full mb-16" style={{ fontSize: 13 }}>
+                            🌱 Get More Crop Recommendations
+                        </button>
+                    </Link>
+
+                    {/* Farm Profile */}
                     <div className="card p-16 mb-12">
                         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{t('profile.farmProfile')}</div>
                         <div className="ig"><label>{t('profile.name')}</label><input value={name} onChange={e => setName(e.target.value)} /></div>

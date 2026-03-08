@@ -8,11 +8,21 @@ import BottomNav from '@/components/layout/BottomNav';
 
 interface Message { text: string; isUser: boolean; }
 
-const SYSTEM_PROMPT = `You are FasalMitra AI, an expert agricultural assistant for Indian farmers. You help with crop recommendations, disease diagnosis, government schemes, market prices, soil health, and weather-based advice. Respond in a friendly, practical way with specific dosages, prices, and actionable steps. Keep responses under 200 words. Use bullet points and emojis. Respond in whatever language the farmer uses (Hindi, Marathi, or English).`;
-
 export default function AIChatPage() {
     const { user } = useAuth();
     const t = useTranslation();
+
+    // Build a context-aware system prompt using user's profile and active crops
+    const cropContext = (user?.activeCrops || []).length > 0
+        ? `The farmer currently grows: ${user!.activeCrops.map(c => `${c.name} (${c.season}, Day ${c.dayCount || 0}/${c.totalDays || 120})`).join(', ')}.`
+        : 'The farmer has not selected any crops yet — encourage them to use the AI crop recommendation feature.';
+
+    const SYSTEM_PROMPT = `You are FasalMitra AI, an expert agricultural assistant for Indian farmers. 
+Farmer profile: Name: ${user?.name || 'Farmer'}, Location: ${user?.location || 'India'}, Farm size: ${user?.farmSize || 'unknown'} acres, Soil: ${user?.soilType || 'unknown'}.
+${cropContext}
+Help with crop recommendations, disease diagnosis, government schemes, market prices, soil health, and weather-based advice. 
+Respond in a friendly, practical way with specific dosages, prices, and actionable steps. Keep responses under 200 words. Use bullet points and emojis. Respond in whatever language the farmer uses (Hindi, Marathi, or English).`;
+
     const quickActions = [t('aiChat.q1'), t('aiChat.q2'), t('aiChat.q3'), t('aiChat.q4'), t('aiChat.q5'), t('aiChat.q6')];
     const [messages, setMessages] = useState<Message[]>([
         { text: `नमस्ते ${user?.name || t('profile.farmer')} जी! 🙏\n\nI'm your FasalMitra AI assistant. I can help with:\n• 🌱 Crop recommendations & planning\n• 🔬 Disease diagnosis & treatment\n• 💰 Market prices & best time to sell\n• 🏛️ Government schemes & subsidies\n• 🌦️ Weather-based farm advice\n• 📊 Soil health & fertilizer guidance\n\nAsk me anything in Hindi, Marathi, or English!`, isUser: false }

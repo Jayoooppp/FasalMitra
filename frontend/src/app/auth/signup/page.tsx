@@ -43,7 +43,8 @@ export default function SignUp() {
         setLoading(true);
         try {
             await register({ name, email, password, phone, location, farmSize: parseFloat(farmSize), soilType, preferredLanguage });
-            router.push('/dashboard');
+            // After signup, guide new users to get their first AI crop recommendation
+            router.push('/crop?new=1');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Registration failed');
         }

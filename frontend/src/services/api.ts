@@ -21,6 +21,11 @@ export const api = {
     getProfile: () => request('/auth/profile'),
     updateProfile: (body: object) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(body) }),
 
+    // Active Crops (per-user)
+    getActiveCrops: () => request('/auth/crops'),
+    addActiveCrop: (body: object) => request('/auth/crops', { method: 'POST', body: JSON.stringify(body) }),
+    removeActiveCrop: (cropId: string) => request(`/auth/crops/${cropId}`, { method: 'DELETE' }),
+
     // Market
     getPrices: () => request('/market/prices'),
     getPriceHistory: (crop: string) => request(`/market/prices/${crop}/history`),
@@ -42,7 +47,14 @@ export const api = {
     getLaborers: (skill?: string) => request(`/labor${skill ? `?skill=${skill}` : ''}`),
 
     // News
-    getNews: (category?: string) => request(`/news${category ? `?category=${category}` : ''}`),
+    getNews: (params?: { category?: string; crops?: string[]; location?: string }) => {
+        const qs = new URLSearchParams();
+        if (params?.category && params.category !== 'All') qs.set('category', params.category);
+        if (params?.crops?.length) qs.set('crops', params.crops.join(','));
+        if (params?.location) qs.set('location', params.location);
+        const query = qs.toString();
+        return request(`/news${query ? `?${query}` : ''}`);
+    },
 
     // Tasks
     getTasks: () => request('/tasks'),
