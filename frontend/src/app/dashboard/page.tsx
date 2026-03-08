@@ -1,15 +1,43 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useTranslation } from '@/context/LanguageContext';
+import { api } from '@/services/api';
 import Link from 'next/link';
 import BottomNav from '@/components/layout/BottomNav';
+
+// Map OpenWeatherMap icon codes to emojis
+function weatherEmoji(icon: string): string {
+    const map: Record<string, string> = {
+        '01d': '☀️', '01n': '🌙',
+        '02d': '⛅', '02n': '☁️',
+        '03d': '☁️', '03n': '☁️',
+        '04d': '☁️', '04n': '☁️',
+        '09d': '🌧️', '09n': '🌧️',
+        '10d': '🌦️', '10n': '🌧️',
+        '11d': '⛈️', '11n': '⛈️',
+        '13d': '❄️', '13n': '❄️',
+        '50d': '🌫️', '50n': '🌫️',
+    };
+    return map[icon] || '🌤️';
+}
+
+function aqiEmoji(aqi: number): string {
+    return ['🟢', '🟡', '🟠', '🔴', '🟣'][aqi - 1] || '⚪';
+}
+
+interface WeatherData {
+    weather: { temp: number; description: string; icon: string; humidity: number };
+    airQuality: { aqi: number; label: string; pm25: number };
+}
 
 export default function Dashboard() {
     const { user } = useAuth();
     const { showToast } = useToast();
     const t = useTranslation();
+    const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+    const [weatherLoading, setWeatherLoading] = useState(true);
     const [tasks, setTasks] = useState([
         { id: 1, title: 'Irrigate Onion Field (Block A)', due: 'Due today · 2.5 acres', priority: 'amber' as const, done: true },
         { id: 2, title: 'Apply Potash fertilizer', due: 'Due tomorrow · 60 kg/acre', priority: 'green' as const, done: false },
@@ -17,10 +45,32 @@ export default function Dashboard() {
         { id: 4, title: 'Update crop log', due: 'This week', priority: 'green' as const, done: false },
     ]);
 
+    // Fetch weather on mount
+    useEffect(() => {
+        if (user?.location) {
+            api.getWeather(user.location)
+                .then((data: any) => setWeatherData(data))
+                .catch(() => setWeatherData(null))
+                .finally(() => setWeatherLoading(false));
+        } else {
+            setWeatherLoading(false);
+        }
+    }, [user?.location]);
+
     const toggleTask = (id: number) => {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
         showToast(t('dash.taskCompleted'));
     };
+
+    // Weather display values
+    const weatherIcon = weatherData ? weatherEmoji(weatherData.weather.icon) : '☀️';
+    const weatherVal = weatherData
+        ? `${weatherData.weather.temp}°C ${weatherData.weather.description.charAt(0).toUpperCase() + weatherData.weather.description.slice(1)}`
+        : t('dash.weatherVal');
+    const aqiIcon = weatherData ? aqiEmoji(weatherData.airQuality.aqi) : '💨';
+    const aqiVal = weatherData
+        ? `${weatherData.airQuality.label} · PM2.5: ${Math.round(weatherData.airQuality.pm25)}`
+        : t('dash.airVal');
 
     return (
         <div className="app">
@@ -60,15 +110,20 @@ export default function Dashboard() {
                         <div className="live-badge"><div className="ld" /> Live</div>
                     </div>
 
-                    {/* Stats */}
+                    {/* Stats — Live Weather & AQI */}
                     <div className="stats">
-                        <div className="stat"><div className="stat-ico">☀️</div><div className="stat-lbl">{t('dash.weather')}</div><div className="stat-val">{t('dash.weatherVal')}</div></div>
-                        <div className="stat"><div className="stat-ico">💨</div><div className="stat-lbl">{t('dash.airQuality')}</div><div className="stat-val">{t('dash.airVal')}</div></div>
+                        <div className="stat">
+                            <div className="stat-ico">{weatherLoading ? '⏳' : weatherIcon}</div>
+                            <div className="stat-lbl">{t('dash.weather')}</div>
+                            <div className="stat-val">{weatherLoading ? '...' : weatherVal}</div>
+                        </div>
+                        <div className="stat">
+                            <div className="stat-ico">{weatherLoading ? '⏳' : aqiIcon}</div>
+                            <div className="stat-lbl">{t('dash.airQuality')}</div>
+                            <div className="stat-val">{weatherLoading ? '...' : aqiVal}</div>
+                        </div>
                     </div>
 
-                    {/* Alerts */}
-                    <div className="alert alert-w"><span className="alert-ico">⚠️</span><div className="alert-txt"><strong>{t('dash.pestAlert')}</strong> {t('dash.pestMsg')}</div></div>
-                    <div className="alert alert-g"><span className="alert-ico">✅</span><div className="alert-txt"><strong>{t('dash.pmKisan')}</strong> {t('dash.pmKisanMsg')}</div></div>
 
                     {/* Tasks */}
                     <div className="sec-row"><span className="sec-lbl">{t('dash.todaysTasks')}</span><Link href="/guide" className="sec-lnk">{t('dash.viewAll')}</Link></div>
@@ -123,3 +178,4 @@ export default function Dashboard() {
         </div>
     );
 }
+

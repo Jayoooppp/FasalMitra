@@ -54,4 +54,7 @@ export const api = {
     aiChat: (body: object) => request('/ai/chat', { method: 'POST', body: JSON.stringify(body) }),
     aiDiagnose: (body: object) => request('/ai/diagnose', { method: 'POST', body: JSON.stringify(body) }),
     aiCrop: (body: object) => request('/ai/crop', { method: 'POST', body: JSON.stringify(body) }),
+
+    // Weather
+    getWeather: (location: string) => request(`/weather?location=${encodeURIComponent(location)}`),
 };

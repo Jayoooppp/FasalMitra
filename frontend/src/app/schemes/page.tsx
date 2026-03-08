@@ -29,9 +29,7 @@ export default function SchemesPage() {
                         <button key={k} className={`chip ${activeIdx === i ? 'active' : ''}`} onClick={() => setActiveIdx(i)}>{t(k)}</button>
                     ))}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 10, textAlign: 'right' }}>
-                    {t('schemes.source')} <a href="https://agriwelfare.gov.in/en/Major" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--green)', textDecoration: 'underline' }}>agriwelfare.gov.in</a>
-                </div>
+
                 <div className="card mb-0" style={{ padding: 0 }}>
                     {schemes.map((s, i) => (
                         <div key={s.id} className="sc-item" style={i === schemes.length - 1 ? { borderBottom: 'none' } : {}} onClick={() => setSelectedScheme(s)}>

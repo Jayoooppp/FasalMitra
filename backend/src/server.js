@@ -14,6 +14,7 @@ const laborRoutes = require('./routes/labor');
 const newsRoutes = require('./routes/news');
 const taskRoutes = require('./routes/tasks');
 const aiRoutes = require('./routes/ai');
+const weatherRoutes = require('./routes/weather');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +41,7 @@ app.use('/api/labor', laborRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/weather', weatherRoutes);
 
 // 404 handler
 app.use((req, res) => {
